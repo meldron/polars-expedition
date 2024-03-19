@@ -1,0 +1,31 @@
+[package]
+name = "polars_encrypt"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "extend_polars"
+crate-type = ["cdylib"]
+
+[dependencies]
+argon2 = "0.5.3"
+hex = "0.4.3"
+polars = { version = "0.38", features = [
+    "fmt",
+    "dtype-categorical",
+    "dtype-datetime",
+    "dtype-date",
+    "dtype-struct",
+    "lazy",
+    # "nightly",
+    "performant",
+    "cse",
+] }
+polars-core = { version = "0.38" }
+polars-lazy = { version = "0.38" }
+pyo3 = { version = "0.20", features = ["extension-module", "abi3-py310"] }
+pyo3-polars = { version = "0.12", features = ["lazy"] }
+rand = "0.8.5"
+rayon = "1.8"
+xsalsa20poly1305 = "0.9.1"

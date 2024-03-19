@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite + TS</title>
+  <style>
+    /* Basic reset for table styling */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      /* Collapse borders */
+      table-layout: fixed;
+      /* Helps with handling wide content */
+      font-family: Arial, sans-serif;
+      /* Change as needed */
+    }
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      /* Light grey border */
+      text-align: left;
+      /* Align text to the left */
+      padding: 8px;
+      /* Add spacing around text */
+    }
+
+    th {
+      background-color: #f2f2f2;
+      /* Light grey background for headers */
+      color: #333;
+      /* Dark text for contrast */
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+      /* Zebra striping for rows */
+    }
+
+    /* Styling for header row */
+    th:first-child,
+    td:first-child {
+      text-align: center;
+      /* Center-align the first column (Metric/Column) */
+    }
+
+    td:first-child {
+      font-weight: bold;
+    }
+
+
+    /* Responsive adjustments */
+    @media screen and (max-width: 600px) {
+
+      th,
+      td {
+        display: block;
+        width: 100%;
+      }
+
+      tr {
+        margin-bottom: 10px;
+      }
+
+      th:first-child,
+      td:first-child {
+        text-align: left;
+        /* Align to left on smaller screens */
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <input type="file" id="fileInput" />
+  <table id="describeTable"></table>
+  <pre id="describe"></pre>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+</html>

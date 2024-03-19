@@ -1,0 +1,9 @@
+[project]
+name = "polars_extension"
+requires-python = ">=3.8"
+dependencies = ["maturin", "polars[pyarrow]"]
+
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
