@@ -10,7 +10,14 @@ export interface Stats {
   max: number | null;
 }
 
-function generateTable(data: Record<string, Stats>) {
+function formatDate(date: number | string): string {
+  if (typeof date === "number") {
+    return new Date(date).toISOString();
+  }
+  return date;
+}
+
+function generateTable(data: Record<string, Stats>, dateCols: string[]) {
   const table = document.getElementById("describeTable");
 
   if (table === null) {
@@ -43,16 +50,30 @@ function generateTable(data: Record<string, Stats>) {
     "max",
   ];
 
+  const s_metrics: (keyof Stats)[] = ["min", "median", "mean", "max"];
+
   metrics.forEach((metric) => {
+    function formatValue(v: number | null, column: string): string {
+      if (v === null) {
+        return "␀";
+      }
+
+      if (!s_metrics.includes(metric) || !dateCols.includes(column)) {
+        return v.toFixed(2);
+      }
+
+      return formatDate(v);
+    }
+
     const row = document.createElement("tr");
     const metricCell = document.createElement("td");
     metricCell.textContent = metric;
     row.appendChild(metricCell);
 
-    Object.values(data).forEach((value) => {
+    Object.entries(data).forEach(([column, value]) => {
       const cell = document.createElement("td");
       const metricValue = value[metric];
-      cell.textContent = metricValue !== null ? metricValue.toString() : "␀";
+      cell.textContent = formatValue(metricValue, column);
       row.appendChild(cell);
     });
 
@@ -69,10 +90,15 @@ function readFile(file: File): void {
       let description: string | null = null;
       let description_text: string | null = null;
 
-      try {
-        description = describe(reader.result.toString());
+      const dateCols = {
+        date: "%Y-%m-%d",
+        event_time_date: "%Y-%m-%dT%H:%M:%S%.f",
+      };
 
-        generateTable(JSON.parse(description));
+      try {
+        description = describe(reader.result.toString(), dateCols);
+
+        generateTable(JSON.parse(description), Object.keys(dateCols));
         description_text = JSON.stringify(JSON.parse(description), null, 2);
       } catch (err: any) {
         description_text = `Error reading csv: ${err}`;

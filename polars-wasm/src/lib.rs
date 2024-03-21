@@ -2,9 +2,11 @@ mod utils;
 
 use std::{collections::HashMap, io::Cursor};
 
+use chrono::{format::ParseErrorKind, NaiveDate, NaiveDateTime, ParseError, ParseResult};
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string;
+use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -29,8 +31,38 @@ pub fn count_csv_lines(csv_data: &str) -> Result<usize, String> {
     }
 }
 
+pub fn parse_date(date_str: &str, format: &str) -> ParseResult<NaiveDateTime> {
+    match NaiveDateTime::parse_from_str(date_str, format) {
+        Ok(datetime) => Ok(datetime),
+        Err(e) => match e.kind() {
+            ParseErrorKind::NotEnough => {
+                // If the error is because of missing time component, parse as NaiveDate and set time to midnight
+                let date = NaiveDate::parse_from_str(date_str, format)?;
+                Ok(date.and_hms(0, 0, 0))
+            }
+            _ => Err(e), // Propagate other errors
+        },
+    }
+}
+
+pub fn parse_as_date_series(series: &Series, date_format: &str) -> Result<Series, String> {
+    Ok(series
+        .str()
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|opt_str| {
+            opt_str
+                .and_then(|str_val| parse_date(str_val, date_format).ok())
+                .map(|dt| dt.and_utc().timestamp_millis())
+        })
+        .collect::<Int64Chunked>()
+        .into_series()
+        .cast(&DataType::Datetime(TimeUnit::Milliseconds, None))
+        .map_err(|e| e.to_string())?)
+}
+
 #[wasm_bindgen]
-pub fn describe(csv_data: &str) -> Result<String, String> {
+pub fn describe(csv_data: &str, date_cols_js: JsValue) -> Result<String, String> {
     let cursor = Cursor::new(csv_data.as_bytes());
     let df_result = CsvReader::new(cursor).infer_schema(None).finish();
 
@@ -39,10 +71,25 @@ pub fn describe(csv_data: &str) -> Result<String, String> {
         Err(err) => return Err(err.to_string()),
     };
 
+    let date_cols: HashMap<String, String> = from_value(date_cols_js).map_err(|e| e.to_string())?;
+
     let mut map: HashMap<String, Stats> = HashMap::new();
 
     for series in df.get_columns() {
-        let name = series.name();
+        let name = series.name().to_owned();
+
+        let mut date_series: Option<Series> = None;
+
+        if let Some(format) = date_cols.get(series.name()) {
+            date_series = Some(parse_as_date_series(series, format)?);
+        }
+
+        let series = match date_series.as_ref() {
+            Some(s) => s,
+            None => series,
+        };
+
+        let name = name;
 
         let len = series.len();
         let null_values = series.null_count();
