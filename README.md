@@ -2,7 +2,7 @@
 
 <img src="polars-expedition.png" width="200"/>
 
-Some experiments with [Polars](https://pola.rs) for the [Nuremberg Data Science & Artificial Intelligence Meetup](https://www.meetup.com/nuernberg-data-science/events/299637415/).
+Some experiments with [Polars](https://pola.rs) for the [Nuremberg Data Science & Artificial Intelligence #14 Meetup](https://www.meetup.com/nuernberg-data-science/events/299637415/).
 
 [📜 Slide Deck](./var/20240321-14_Nuremberg_Datascience_AI_Meetup-Polars.pdf)
 
