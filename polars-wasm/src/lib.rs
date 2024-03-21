@@ -2,7 +2,7 @@ mod utils;
 
 use std::{collections::HashMap, io::Cursor};
 
-use chrono::{format::ParseErrorKind, NaiveDate, NaiveDateTime, ParseError, ParseResult};
+use chrono::{format::ParseErrorKind, NaiveDate, NaiveDateTime, ParseResult};
 use polars::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string;
@@ -10,7 +10,7 @@ use serde_wasm_bindgen::from_value;
 use wasm_bindgen::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-struct Stats {
+pub struct Stats {
     pub len: usize,
     pub null_values: usize,
     pub unique_values: Option<usize>,
@@ -61,6 +61,27 @@ pub fn parse_as_date_series(series: &Series, date_format: &str) -> Result<Series
         .map_err(|e| e.to_string())?)
 }
 
+pub fn series_stats(series: &Series) -> Stats {
+    let len = series.len();
+    let null_values = series.null_count();
+    let unique_values = series.n_unique().ok();
+
+    let min: Option<f64> = series.min().unwrap_or(None);
+    let mean = series.mean();
+    let median = series.median();
+    let max: Option<f64> = series.max().unwrap_or(None);
+
+    Stats {
+        len,
+        null_values,
+        unique_values,
+        min,
+        median,
+        mean,
+        max,
+    }
+}
+
 #[wasm_bindgen]
 pub fn describe(csv_data: &str, date_cols_js: JsValue) -> Result<String, String> {
     let cursor = Cursor::new(csv_data.as_bytes());
@@ -89,28 +110,9 @@ pub fn describe(csv_data: &str, date_cols_js: JsValue) -> Result<String, String>
             None => series,
         };
 
-        let name = name;
+        let stats = series_stats(series);
 
-        let len = series.len();
-        let null_values = series.null_count();
-        let unique_values = series.n_unique().ok();
-
-        let min: Option<f64> = series.min().unwrap_or(None);
-        let mean = series.mean();
-        let median = series.median();
-        let max: Option<f64> = series.max().unwrap_or(None);
-
-        let stats = Stats {
-            len,
-            null_values,
-            unique_values,
-            min,
-            median,
-            mean,
-            max,
-        };
-
-        map.insert(name.to_owned(), stats.clone());
+        map.insert(name, stats);
     }
 
     let result = to_string(&map).map_err(|e| e.to_string())?;
